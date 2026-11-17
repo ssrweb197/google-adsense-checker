@@ -1144,7 +1144,7 @@
             <div class="score-number" id="overallScoreVal">0</div>
           </div>
           <div>
-            <h3 style="font-size: 1.1rem; font-weight: 800;">AdSense Score</h3>
+            <h3 style="font-size: 1.1rem; font-weight: 800;">Verified checks only</h3>
             <p style="font-size: 0.8rem; color: var(--text-muted);" id="scoreRatingText">Calculating status...</p>
           </div>
         </div>
@@ -1521,76 +1521,51 @@ Discover powerful SEO, Blogger, PDF, Image, Text, Developer and Productivity too
       document.getElementById('reportUrlDisplay').textContent = url;
       auditResults = [];
 
-      let totalScoreWeight = 0;
-      let earnedScoreWeight = 0;
-
       let passCount = 0;
       let warningCount = 0;
       let failCount = 0;
 
-      const isHttps = url.startsWith('https://');
-
+      // This static GitHub Pages tool cannot reliably inspect another site's
+      // HTML, policies, links, or real-user performance metrics because of
+      // browser cross-origin restrictions. Only the submitted URL scheme is
+      // directly verifiable here; all other checks require manual review.
       checkItemsDatabase.forEach((item) => {
-        let status = 'pass';
-        
+        let status = 'warning';
+        let statusMsg = 'Not automatically verified. Open the recommendation and review this item on your website.';
+
         if (item.id === 'https') {
-          status = isHttps ? 'pass' : 'fail';
-        } else {
-          const rand = Math.random();
-          if (rand > 0.82) {
-            status = 'fail';
-          } else if (rand > 0.65) {
-            status = 'warning';
-          } else {
-            status = 'pass';
-          }
+          status = url.startsWith('https://') ? 'pass' : 'fail';
+          statusMsg = status === 'pass'
+            ? 'The submitted URL uses HTTPS. This does not verify the certificate or every page.'
+            : 'The submitted URL does not use HTTPS. Use a secure HTTPS address.';
         }
 
-        totalScoreWeight += item.weight;
-        if (status === 'pass') {
-          earnedScoreWeight += item.weight;
-          passCount++;
-        } else if (status === 'warning') {
-          earnedScoreWeight += (item.weight * 0.5);
-          warningCount++;
-        } else {
-          failCount++;
-        }
+        if (status === 'pass') passCount++;
+        else if (status === 'warning') warningCount++;
+        else failCount++;
 
         auditResults.push({
           ...item,
-          status: status
+          status,
+          passMsg: status === 'pass' ? statusMsg : item.passMsg,
+          failMsg: status !== 'pass' ? statusMsg : item.failMsg
         });
       });
 
-      const finalScore = Math.round((earnedScoreWeight / totalScoreWeight) * 100);
-
-      document.getElementById('overallScoreVal').textContent = finalScore;
+      document.getElementById('overallScoreVal').textContent = '—';
       document.getElementById('countPass').textContent = passCount;
       document.getElementById('countWarning').textContent = warningCount;
       document.getElementById('countFail').textContent = failCount;
 
       const gaugeFill = document.getElementById('scoreGaugeFill');
-      const offset = 283 - (283 * finalScore / 100);
-      gaugeFill.style.strokeDashoffset = offset;
-
-      let gaugeColor = 'var(--pass)';
-      let ratingText = 'Excellent AdSense Readiness';
-      if (finalScore < 60) {
-        gaugeColor = 'var(--fail)';
-        ratingText = 'High Rejection Risk - Action Needed';
-      } else if (finalScore < 80) {
-        gaugeColor = 'var(--warning)';
-        ratingText = 'Moderate Readiness - Address Warnings';
-      }
-
-      gaugeFill.style.stroke = gaugeColor;
-      document.getElementById('scoreRatingText').textContent = ratingText;
-      document.getElementById('scoreRatingText').style.color = gaugeColor;
+      gaugeFill.style.strokeDashoffset = 283;
+      gaugeFill.style.stroke = 'var(--warning)';
+      document.getElementById('scoreRatingText').textContent = 'Manual review needed — no approval score is calculated';
+      document.getElementById('scoreRatingText').style.color = 'var(--warning)';
 
       renderCheckGrid(auditResults);
       document.getElementById('dashboardContainer').style.display = 'block';
-      showToast('Audit complete! Results loaded.');
+      showToast('Diagnostic checklist ready. Review the items marked for manual verification.', 'warning');
     }
 
     /* ==========================================================================
