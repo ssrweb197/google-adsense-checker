@@ -253,6 +253,35 @@
       border-color: var(--primary);
     }
 
+
+    .nav-menu{display:flex;align-items:center;gap:clamp(.55rem,1.5vw,1.1rem)}
+    .nav-menu a{color:var(--text-muted);font-size:.9rem;font-weight:600;white-space:nowrap}
+    .nav-menu a:hover{color:var(--primary);text-decoration:none}
+    .menu-toggle{display:none;background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-main);padding:.55rem .7rem;border-radius:var(--radius-sm);font-weight:700}
+    @media(max-width:760px){
+      .navbar{padding:.65rem 0}
+      .nav-container{position:relative;flex-wrap:wrap;gap:.55rem}
+      .logo{font-size:1rem;max-width:calc(100% - 125px)}
+      .logo-badge{font-size:.62rem}
+      .nav-actions{margin-left:auto;gap:.4rem}
+      .menu-toggle{display:flex;align-items:center;gap:.35rem}
+      .theme-toggle{padding:.55rem .65rem;font-size:.8rem}
+      .nav-menu{display:none;order:3;flex:0 0 100%;width:100%;padding:.55rem 0 .2rem;border-top:1px solid var(--border-color);flex-direction:column;align-items:stretch;gap:0}
+      .nav-menu.open{display:flex}
+      .nav-menu a{padding:.7rem .35rem;border-bottom:1px solid var(--border-color);font-size:.95rem}
+      .hero-section{padding:1.5rem 0 1rem}
+      .hero-title{font-size:clamp(1.55rem,7vw,2.2rem)}
+      .hero-subtitle{margin-bottom:1.25rem}
+      .seo-article{margin:1.5rem 0;padding:1.1rem;font-size:.9rem}
+      .faq-section{margin:2rem 0}
+    }
+    @media(max-width:380px){
+      .logo{font-size:.9rem;gap:.35rem}
+      .logo svg{width:21px;height:21px}
+      .logo-badge{display:none}
+      .menu-toggle span{display:none}
+    }
+
     /* ==========================================================================
        4. HERO & AUDIT INPUT SECTION
        ========================================================================== */
@@ -1036,25 +1065,18 @@
         <span class="logo-badge">FREE</span>
       </div>
       <div class="nav-actions">
-
-  <div class="nav-menu">
-    <a href="index.html">Home</a>
-    <a href="about.html">About</a>
-    <a href="contact.html">Contact</a>
-    <a href="faq.html">FAQ</a>
-    <a href="privacy-policy.html">Privacy</a>
-  </div>
-
-  <button class="theme-toggle" id="themeToggleBtn" aria-label="Toggle Theme">
-      <span id="themeIcon">☀️</span>
-      <span id="themeText">Light</span>
-  </button>
-
-</div>
-        <button class="theme-toggle" id="themeToggleBtn" aria-label="Toggle Theme">
-          <span id="themeIcon">☀️</span>
-          <span id="themeText">Light</span>
+        <button class="menu-toggle" id="menuToggleBtn" type="button" aria-expanded="false" aria-controls="primaryNav">☰ <span>Menu</span></button>
+        <div class="nav-menu" id="primaryNav">
+          <a href="index.html">Home</a>
+          <a href="about.html">About</a>
+          <a href="contact.html">Contact</a>
+          <a href="faq.html">FAQ</a>
+          <a href="privacy-policy.html">Privacy</a>
+        </div>
+        <button class="theme-toggle" id="themeToggleBtn" aria-label="Toggle theme">
+          <span id="themeIcon">☀️</span><span id="themeText">Light</span>
         </button>
+      </div>
       </div>
     </div>
   </nav>
@@ -1122,7 +1144,7 @@
             <div class="score-number" id="overallScoreVal">0</div>
           </div>
           <div>
-            <h3 style="font-size: 1.1rem; font-weight: 800;">AdSense Score</h3>
+            <h3 style="font-size: 1.1rem; font-weight: 800;">Verified checks only</h3>
             <p style="font-size: 0.8rem; color: var(--text-muted);" id="scoreRatingText">Calculating status...</p>
           </div>
         </div>
@@ -1333,6 +1355,28 @@
     </article>
   </main>
 
+  <div style="margin:40px 0;padding:25px;border-radius:16px;background:linear-gradient(135deg,#4f46e5,#2563eb);text-align:center;color:#fff;box-shadow:0 8px 25px rgba(0,0,0,.15);">
+
+<h2 style="margin:0 0 10px;font-size:28px;">🚀 Explore More Free Online Tools</h2>
+
+<p style="font-size:17px;line-height:1.7;margin-bottom:20px;">
+Discover powerful SEO, Blogger, PDF, Image, Text, Developer and Productivity tools — all in one place and completely FREE.
+</p>
+
+<a href="https://brandblitztools.blogspot.com/" target="_blank" style="display:inline-block;background:#fff;color:#2563eb;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
+🌐 Visit BrandBlitz Tools
+</a>
+
+<a href="https://brandblitztools.blogspot.com/search/label/SEO%20Tools" target="_blank" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
+📈 Explore SEO Tools
+</a>
+
+<a href="https://brandblitztools.blogspot.com/search/label/Online%20Tools" target="_blank" style="display:inline-block;background:#f59e0b;color:#fff;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
+🛠️ Browse All Tools
+</a>
+
+</div>
+
   <!-- FOOTER -->
   <footer>
     <div class="container">
@@ -1408,6 +1452,19 @@
       }
     }
 
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+    const primaryNav = document.getElementById('primaryNav');
+    menuToggleBtn.addEventListener('click', () => {
+      const isOpen = primaryNav.classList.toggle('open');
+      menuToggleBtn.setAttribute('aria-expanded', String(isOpen));
+      menuToggleBtn.innerHTML = isOpen ? '✕ <span>Close</span>' : '☰ <span>Menu</span>';
+    });
+    primaryNav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+      primaryNav.classList.remove('open');
+      menuToggleBtn.setAttribute('aria-expanded', 'false');
+      menuToggleBtn.innerHTML = '☰ <span>Menu</span>';
+    }));
+
     // Initialize theme on page load (Defaults to 'light' on first visit)
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme, true);
@@ -1464,76 +1521,51 @@
       document.getElementById('reportUrlDisplay').textContent = url;
       auditResults = [];
 
-      let totalScoreWeight = 0;
-      let earnedScoreWeight = 0;
-
       let passCount = 0;
       let warningCount = 0;
       let failCount = 0;
 
-      const isHttps = url.startsWith('https://');
-
+      // This static GitHub Pages tool cannot reliably inspect another site's
+      // HTML, policies, links, or real-user performance metrics because of
+      // browser cross-origin restrictions. Only the submitted URL scheme is
+      // directly verifiable here; all other checks require manual review.
       checkItemsDatabase.forEach((item) => {
-        let status = 'pass';
-        
+        let status = 'warning';
+        let statusMsg = 'Not automatically verified. Open the recommendation and review this item on your website.';
+
         if (item.id === 'https') {
-          status = isHttps ? 'pass' : 'fail';
-        } else {
-          const rand = Math.random();
-          if (rand > 0.82) {
-            status = 'fail';
-          } else if (rand > 0.65) {
-            status = 'warning';
-          } else {
-            status = 'pass';
-          }
+          status = url.startsWith('https://') ? 'pass' : 'fail';
+          statusMsg = status === 'pass'
+            ? 'The submitted URL uses HTTPS. This does not verify the certificate or every page.'
+            : 'The submitted URL does not use HTTPS. Use a secure HTTPS address.';
         }
 
-        totalScoreWeight += item.weight;
-        if (status === 'pass') {
-          earnedScoreWeight += item.weight;
-          passCount++;
-        } else if (status === 'warning') {
-          earnedScoreWeight += (item.weight * 0.5);
-          warningCount++;
-        } else {
-          failCount++;
-        }
+        if (status === 'pass') passCount++;
+        else if (status === 'warning') warningCount++;
+        else failCount++;
 
         auditResults.push({
           ...item,
-          status: status
+          status,
+          passMsg: status === 'pass' ? statusMsg : item.passMsg,
+          failMsg: status !== 'pass' ? statusMsg : item.failMsg
         });
       });
 
-      const finalScore = Math.round((earnedScoreWeight / totalScoreWeight) * 100);
-
-      document.getElementById('overallScoreVal').textContent = finalScore;
+      document.getElementById('overallScoreVal').textContent = '—';
       document.getElementById('countPass').textContent = passCount;
       document.getElementById('countWarning').textContent = warningCount;
       document.getElementById('countFail').textContent = failCount;
 
       const gaugeFill = document.getElementById('scoreGaugeFill');
-      const offset = 283 - (283 * finalScore / 100);
-      gaugeFill.style.strokeDashoffset = offset;
-
-      let gaugeColor = 'var(--pass)';
-      let ratingText = 'Excellent AdSense Readiness';
-      if (finalScore < 60) {
-        gaugeColor = 'var(--fail)';
-        ratingText = 'High Rejection Risk - Action Needed';
-      } else if (finalScore < 80) {
-        gaugeColor = 'var(--warning)';
-        ratingText = 'Moderate Readiness - Address Warnings';
-      }
-
-      gaugeFill.style.stroke = gaugeColor;
-      document.getElementById('scoreRatingText').textContent = ratingText;
-      document.getElementById('scoreRatingText').style.color = gaugeColor;
+      gaugeFill.style.strokeDashoffset = 283;
+      gaugeFill.style.stroke = 'var(--warning)';
+      document.getElementById('scoreRatingText').textContent = 'Manual review needed — no approval score is calculated';
+      document.getElementById('scoreRatingText').style.color = 'var(--warning)';
 
       renderCheckGrid(auditResults);
       document.getElementById('dashboardContainer').style.display = 'block';
-      showToast('Audit complete! Results loaded.');
+      showToast('Diagnostic checklist ready. Review the items marked for manual verification.', 'warning');
     }
 
     /* ==========================================================================
@@ -1706,24 +1738,4 @@
   </script>
 </body>
 </html>
-<div style="margin:40px 0;padding:25px;border-radius:16px;background:linear-gradient(135deg,#4f46e5,#2563eb);text-align:center;color:#fff;box-shadow:0 8px 25px rgba(0,0,0,.15);">
 
-<h2 style="margin:0 0 10px;font-size:28px;">🚀 Explore More Free Online Tools</h2>
-
-<p style="font-size:17px;line-height:1.7;margin-bottom:20px;">
-Discover powerful SEO, Blogger, PDF, Image, Text, Developer and Productivity tools — all in one place and completely FREE.
-</p>
-
-<a href="https://brandblitztools.blogspot.com/" target="_blank" style="display:inline-block;background:#fff;color:#2563eb;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
-🌐 Visit BrandBlitz Tools
-</a>
-
-<a href="https://brandblitztools.blogspot.com/search/label/SEO%20Tools" target="_blank" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
-📈 Explore SEO Tools
-</a>
-
-<a href="https://brandblitztools.blogspot.com/search/label/Online%20Tools" target="_blank" style="display:inline-block;background:#f59e0b;color:#fff;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
-🛠️ Browse All Tools
-</a>
-
-</div>
