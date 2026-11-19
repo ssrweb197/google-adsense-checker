@@ -254,6 +254,24 @@
     }
 
 
+    .guide-section{margin:2rem 0}
+    .guide-details{background:var(--card-bg);border:1px solid var(--border-color);border-radius:18px;overflow:hidden}
+    .guide-details>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.15rem 1.25rem;cursor:pointer;color:var(--text-main)}
+    .guide-details>summary::-webkit-details-marker{display:none}
+    .guide-details>summary strong{display:block;font-size:1.05rem}
+    .guide-details>summary small{display:block;margin-top:.25rem;color:var(--text-muted);font-size:.85rem}
+    .guide-chevron{font-size:1.4rem;color:var(--primary)}
+    .guide-details[open] .guide-chevron{transform:rotate(45deg)}
+    .guide-details .seo-article{margin:0;border:0;border-radius:0;box-shadow:none}
+    .site-footer{margin-top:3rem;padding:2.5rem 0 1.5rem;background:var(--card-bg);border-top:1px solid var(--border-color);color:var(--text-muted)}
+    .footer-inner{display:grid;gap:1.1rem;text-align:center}
+    .footer-brand strong{display:block;color:var(--text-main);font-size:1.15rem}
+    .footer-brand span{display:block;margin-top:.35rem;font-size:.9rem}
+    .footer-links{display:flex;flex-wrap:wrap;justify-content:center;gap:.6rem 1.2rem}
+    .footer-links a{color:var(--text-muted);font-weight:600}
+    .footer-links a:hover{color:var(--primary)}
+    .footer-copy{margin:0;padding-top:1rem;border-top:1px solid var(--border-color);font-size:.82rem}
+    @media(max-width:760px){.guide-details>summary{padding:1rem}.guide-details .seo-article{padding:1.1rem}.footer-links{gap:.75rem 1rem}}
     .nav-menu{display:flex;align-items:center;gap:clamp(.55rem,1.5vw,1.1rem)}
     .nav-menu a{color:var(--text-muted);font-size:.9rem;font-weight:600;white-space:nowrap}
     .nav-menu a:hover{color:var(--primary);text-decoration:none}
@@ -1070,13 +1088,13 @@
           <a href="index.html">Home</a>
           <a href="about.html">About</a>
           <a href="contact.html">Contact</a>
-          <a href="faq.html">FAQ</a>
+          <a href="#faq">FAQ</a>
+          <a href="#guide">Guide</a>
           <a href="privacy-policy.html">Privacy</a>
         </div>
         <button class="theme-toggle" id="themeToggleBtn" aria-label="Toggle theme">
           <span id="themeIcon">☀️</span><span id="themeText">Light</span>
         </button>
-      </div>
       </div>
     </div>
   </nav>
@@ -1239,7 +1257,7 @@
     </section>
 
     <!-- FAQ SECTION -->
-    <section class="faq-section">
+    <section class="faq-section" id="faq">
       <h2 style="text-align: center; font-size: 1.75rem; margin-bottom: 1.5rem;">Frequently Asked Questions</h2>
       <div class="faq-grid">
         <div class="faq-item">
@@ -1281,11 +1299,19 @@
             <p>In some regions, Google historically preferred domains that were at least 6 months old. Globally, new domains can be approved if they offer exceptional, original content and robust technical structure.</p>
           </div>
         </div>
+        <div class="faq-item"><button class="faq-question" onclick="toggleFaq(this)">Can this tool guarantee AdSense approval?<span class="faq-icon">▼</span></button><div class="faq-answer"><p>No. This tool provides a checklist and general guidance. Google reviews each application and makes the final decision.</p></div></div>
+        <div class="faq-item"><button class="faq-question" onclick="toggleFaq(this)">Is there a fixed minimum number of posts or visitors?<span class="faq-icon">▼</span></button><div class="faq-answer"><p>Google does not publish a universal minimum article count or traffic threshold for all applicants. Focus on useful original content, clear navigation and policy compliance.</p></div></div>
+        <div class="faq-item"><button class="faq-question" onclick="toggleFaq(this)">Do I need a Privacy Policy and Contact page?<span class="faq-icon">▼</span></button><div class="faq-answer"><p>A clear privacy disclosure is important for advertising and data practices. About and contact information also help visitors understand who operates the site and how to reach them.</p></div></div>
+        <div class="faq-item"><button class="faq-question" onclick="toggleFaq(this)">Can I apply with a free subdomain?<span class="faq-icon">▼</span></button><div class="faq-answer"><p>Eligibility depends on the platform and account setup. Check current AdSense requirements for your host and domain; a custom domain alone does not guarantee approval.</p></div></div>
+        <div class="faq-item"><button class="faq-question" onclick="toggleFaq(this)">Why is original content important?<span class="faq-icon">▼</span></button><div class="faq-answer"><p>Pages should offer genuine value, clear explanations and useful information rather than copied, thin or repetitive material.</p></div></div>
+        <div class="faq-item"><button class="faq-question" onclick="toggleFaq(this)">How often should I check my website before applying?<span class="faq-icon">▼</span></button><div class="faq-answer"><p>Review important pages regularly. Check navigation, mobile usability, links and whether your disclosures reflect your actual services and data practices.</p></div></div>
       </div>
     </section>
 
-    <!-- SEO RICH CONTENT GUIDE -->
-    <article class="seo-article">
+    <!-- OPTIONAL LONG-FORM GUIDE -->
+    <section class="guide-section" id="guide"><details class="guide-details">
+      <summary><span><strong>AdSense approval & SEO guide</strong><small>Open the detailed checklist and explanations</small></span><span class="guide-chevron">＋</span></summary>
+      <article class="seo-article">
       <h2>The Definitive Guide to Google AdSense Approval, Technical SEO, and Web Compliance</h2>
       <p>Earning approval for the Google AdSense publisher network is a pivotal milestone for webmasters, digital marketers, and content creators aiming to monetize online traffic. However, obtaining approval has become increasingly competitive. Google enforces stringent standards regarding content quality, technical structure, user privacy, and layout usability. This guide delves into the foundational requirements necessary to maximize your site's readiness for AdSense.</p>
 
@@ -1352,38 +1378,16 @@
         <li>Ensure zero placeholder text, draft pages, or broken links exist.</li>
         <li>Run this diagnostic tool to fix any remaining technical SEO or structural warnings.</li>
       </ol>
-    </article>
+      </article>
+    </details></section>
   </main>
 
-  <div style="margin:40px 0;padding:25px;border-radius:16px;background:linear-gradient(135deg,#4f46e5,#2563eb);text-align:center;color:#fff;box-shadow:0 8px 25px rgba(0,0,0,.15);">
-
-<h2 style="margin:0 0 10px;font-size:28px;">🚀 Explore More Free Online Tools</h2>
-
-<p style="font-size:17px;line-height:1.7;margin-bottom:20px;">
-Discover powerful SEO, Blogger, PDF, Image, Text, Developer and Productivity tools — all in one place and completely FREE.
-</p>
-
-<a href="https://brandblitztools.blogspot.com/" target="_blank" style="display:inline-block;background:#fff;color:#2563eb;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
-🌐 Visit BrandBlitz Tools
-</a>
-
-<a href="https://brandblitztools.blogspot.com/search/label/SEO%20Tools" target="_blank" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
-📈 Explore SEO Tools
-</a>
-
-<a href="https://brandblitztools.blogspot.com/search/label/Online%20Tools" target="_blank" style="display:inline-block;background:#f59e0b;color:#fff;text-decoration:none;padding:14px 32px;font-size:18px;font-weight:bold;border-radius:50px;margin:8px;">
-🛠️ Browse All Tools
-</a>
-
-</div>
-
   <!-- FOOTER -->
-  <footer>
-    <div class="container">
-      <p>© 2026 BrandBlitz Tools. All Rights Reserved.</p>
-      <p style="margin-top: 0.4rem; font-size: 0.775rem;">Designed by BrandBlitz Tools for Webmasters, SEO Specialists, and Content Publishers.</p>
-    </div>
-  </footer>
+  <footer class="site-footer"><div class="container footer-inner">
+    <div class="footer-brand"><strong>BrandBlitz Tools</strong><span>Free tools and practical resources for website owners.</span></div>
+    <nav class="footer-links" aria-label="Footer navigation"><a href="index.html">Home</a><a href="about.html">About</a><a href="contact.html">Contact</a><a href="faq.html">FAQ</a><a href="privacy-policy.html">Privacy</a><a href="terms.html">Terms</a></nav>
+    <p class="footer-copy">© 2026 BrandBlitz Tools. All rights reserved.</p>
+  </div></footer>
 
   <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toastContainer"></div>
