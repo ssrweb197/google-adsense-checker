@@ -1482,94 +1482,160 @@
     /* ==========================================================================
        3. AUDIT ENGINE SIMULATION
        ========================================================================== */
-    function startAudit() {
-      const targetUrl = document.getElementById('targetUrl').value.trim();
-      if (!targetUrl) {
-        showToast('Please enter a valid website URL', 'fail');
-        return;
-      }
+    async function startAudit() {
+      const rawUrl = document.getElementById('targetUrl').value.trim();
+      if (!rawUrl) { showToast('Please enter a website URL', 'fail'); return; }
+      let target;
+      try {
+        target = new URL(/^https?:\/\//i.test(rawUrl) ? rawUrl : 'https://' + rawUrl);
+        if (!['http:', 'https:'].includes(target.protocol)) throw new Error('Invalid protocol');
+      } catch (_) { showToast('Please enter a valid http or https website URL', 'fail'); return; }
 
       document.getElementById('loadingContainer').style.display = 'block';
       document.getElementById('dashboardContainer').style.display = 'none';
-
-      const loadingStatusText = document.getElementById('loadingStatusText');
-      const loadingStep = document.getElementById('loadingStep');
-      const loadingProgressBar = document.getElementById('loadingProgressBar');
-
-      const steps = [
-        { progress: 15, text: "Connecting to server...", step: "Executing HTTPS security handshake" },
-        { progress: 35, text: "Crawling HTML markup...", step: "Parsing Meta tags, Headings, and Legal Links" },
-        { progress: 65, text: "Analyzing performance & UX...", step: "Measuring Core Web Vitals & Image assets" },
-        { progress: 85, text: "Evaluating Policy Compliance...", step: "Checking AdSense mandatory requirements" },
-        { progress: 100, text: "Finalizing diagnostic score...", step: "Generating custom report" }
-      ];
-
-      let stepIdx = 0;
-      const interval = setInterval(() => {
-        if (stepIdx < steps.length) {
-          loadingProgressBar.style.width = steps[stepIdx].progress + '%';
-          loadingStatusText.textContent = steps[stepIdx].text;
-          loadingStep.textContent = steps[stepIdx].step;
-          stepIdx++;
-        } else {
-          clearInterval(interval);
-          setTimeout(() => {
-            document.getElementById('loadingContainer').style.display = 'none';
-            runDiagnosticLogic(targetUrl);
-          }, 300);
-        }
-      }, 400);
+      document.getElementById('loadingProgressBar').style.width = '35%';
+      document.getElementById('loadingStatusText').textContent = 'Inspecting the submitted website...';
+      document.getElementById('loadingStep').textContent = 'Reading page HTML and checking public signals';
+      try {
+        await runDiagnosticLogic(target.href);
+      } finally {
+        document.getElementById('loadingContainer').style.display = 'none';
+      }
     }
 
-    function runDiagnosticLogic(url) {
+    async function runDiagnosticLogic(url) {
+      const target = new URL(url);
+      const results = new Map();
+      const put = (id, status, message) => results.set(id, { status, message });
+      const manual = 'Could not be verified automatically from this public-page scan. Please review manually.';
+      const timeoutFetch = async (resource, ms = 9000) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ms);
+        try { return await fetch(resource, { signal: controller.signal, redirect: 'follow' }); }
+        finally { clearTimeout(timer); }
+      };
+
       document.getElementById('reportUrlDisplay').textContent = url;
       auditResults = [];
+      let doc = null, html = '', pageResponse = null, pageError = '';
+      try {
+        pageResponse = await timeoutFetch(url);
+        if (!pageResponse.ok) throw new Error('Website returned HTTP ' + pageResponse.status);
+        html = await pageResponse.text();
+        doc = new DOMParser().parseFromString(html, 'text/html');
+      } catch (error) {
+        pageError = error.name === 'AbortError' ? 'The website took too long to respond.' :
+          (error.message || 'The browser could not read this website. It may block cross-origin access.');
+      }
 
-      let passCount = 0;
-      let warningCount = 0;
-      let failCount = 0;
+      if (doc) {
+        const title = (doc.title || '').trim();
+        const meta = name => doc.querySelector('meta[name="' + name + '" i]')?.content?.trim() || '';
+        const canonical = doc.querySelector('link[rel~="canonical"]')?.href || '';
+        const h1 = doc.querySelectorAll('h1').length;
+        const headings = [...doc.querySelectorAll('h1,h2,h3,h4,h5,h6')];
+        const images = [...doc.images];
+        const links = [...doc.querySelectorAll('a[href]')];
+        const internal = links.filter(a => { try { return new URL(a.href, target).origin === target.origin; } catch (_) { return false; } });
+        const external = links.filter(a => { try { return new URL(a.href, target).origin !== target.origin && /^https?:/.test(a.href); } catch (_) { return false; } });
+        const text = (doc.body?.innerText || '').replace(/\s+/g, ' ').trim();
+        const wordCount = text ? text.split(' ').length : 0;
+        const hrefs = links.map(a => (a.getAttribute('href') || '').toLowerCase());
+        const hasLink = terms => hrefs.some(h => terms.some(t => h.includes(t)));
+        const content = text.toLowerCase();
 
-      // This static GitHub Pages tool cannot reliably inspect another site's
-      // HTML, policies, links, or real-user performance metrics because of
-      // browser cross-origin restrictions. Only the submitted URL scheme is
-      // directly verifiable here; all other checks require manual review.
-      checkItemsDatabase.forEach((item) => {
-        let status = 'warning';
-        let statusMsg = 'Not automatically verified. Open the recommendation and review this item on your website.';
+        put('https', target.protocol === 'https:' ? 'pass' : 'fail', target.protocol === 'https:' ? 'The submitted address uses HTTPS. Certificate validity was not independently checked.' : 'The submitted address uses HTTP. Switch the site to HTTPS.');
+        put('mobile', doc.querySelector('meta[name="viewport"]') ? 'pass' : 'fail', doc.querySelector('meta[name="viewport"]') ? 'A viewport meta tag was found.' : 'No viewport meta tag was found in the returned HTML.');
+        put('title', title.length >= 10 && title.length <= 65 ? 'pass' : 'fail', title ? 'Found title (' + title.length + ' characters): ' + title : 'No HTML title element was found.');
+        put('meta_desc', meta('description').length >= 50 ? 'pass' : 'fail', meta('description') ? 'Found meta description (' + meta('description').length + ' characters).' : 'No meta description was found.');
+        put('canonical', canonical ? 'pass' : 'warning', canonical ? 'Canonical URL found: ' + canonical : 'No canonical link was found in the returned HTML.');
+        put('headings', h1 === 1 && headings.length > 1 ? 'pass' : 'warning', 'Found ' + h1 + ' H1 heading(s) and ' + headings.length + ' total headings.');
+        const missingAlt = images.filter(img => !img.hasAttribute('alt')).length;
+        put('alt_tags', images.length && missingAlt === 0 ? 'pass' : (missingAlt ? 'fail' : 'warning'), images.length ? missingAlt + ' of ' + images.length + ' images have no alt attribute.' : 'No images were found in the returned HTML.');
+        put('og_tags', doc.querySelector('meta[property="og:title"],meta[property="og:description"],meta[property="og:image"]') ? 'pass' : 'warning', doc.querySelector('meta[property^="og:"]') ? 'Open Graph metadata found.' : 'No Open Graph metadata found.');
+        put('twitter_tags', doc.querySelector('meta[name="twitter:card"]') ? 'pass' : 'warning', doc.querySelector('meta[name="twitter:card"]') ? 'Twitter Card metadata found.' : 'No Twitter Card metadata found.');
+        put('schema', doc.querySelector('script[type="application/ld+json"]') ? 'pass' : 'warning', doc.querySelector('script[type="application/ld+json"]') ? 'JSON-LD structured data found.' : 'No JSON-LD structured data found.');
+        put('favicon', doc.querySelector('link[rel~="icon"]') ? 'pass' : 'warning', doc.querySelector('link[rel~="icon"]') ? 'Favicon link found.' : 'No favicon link found.');
+        put('about_page', hasLink(['about']) ? 'pass' : 'warning', hasLink(['about']) ? 'An About link was found in the page HTML.' : 'No About link found in the scanned page.');
+        put('contact_page', hasLink(['contact']) ? 'pass' : 'warning', hasLink(['contact']) ? 'A Contact link was found in the page HTML.' : 'No Contact link found in the scanned page.');
+        put('privacy_page', hasLink(['privacy']) ? 'pass' : 'warning', hasLink(['privacy']) ? 'A Privacy link was found in the page HTML.' : 'No Privacy link found in the scanned page.');
+        put('terms_page', hasLink(['terms','conditions']) ? 'pass' : 'warning', hasLink(['terms','conditions']) ? 'A Terms link was found in the page HTML.' : 'No Terms link found in the scanned page.');
+        put('cookie_policy', /cookie|consent|privacy policy/i.test(content) || hasLink(['cookie','privacy']) ? 'pass' : 'warning', /cookie|consent/i.test(content) || hasLink(['cookie','privacy']) ? 'Cookie/consent wording or a privacy link was found; legal adequacy is not assessed.' : 'No cookie/consent wording or privacy link was detected.');
+        put('navigation', doc.querySelector('nav') || doc.querySelector('header') ? 'pass' : 'warning', doc.querySelector('nav') ? 'A navigation landmark was found.' : 'No nav landmark was found; a header alone is not proof of usable navigation.');
+        put('internal_links', internal.length >= 5 ? 'pass' : 'warning', 'Found ' + internal.length + ' internal links on the scanned page.');
+        put('external_links', external.length ? 'pass' : 'warning', 'Found ' + external.length + ' external links on the scanned page.');
+        put('word_count', wordCount >= 500 ? 'pass' : 'warning', 'Found approximately ' + wordCount + ' visible words on the scanned page. This is not a quality judgement.');
+        const longParas = [...doc.querySelectorAll('p')].filter(p => p.innerText.trim().split(/\s+/).length > 120).length;
+        put('readability', longParas <= 2 ? 'pass' : 'warning', 'Found ' + longParas + ' paragraphs longer than 120 words. Automated readability is limited.');
+        const modernImages = images.filter(img => /webp|avif/i.test(img.currentSrc || img.src)).length;
+        put('img_opt', images.length && modernImages / images.length >= .5 ? 'pass' : 'warning', images.length ? modernImages + ' of ' + images.length + ' image URLs use WebP/AVIF. Actual file size is not measured.' : 'No images found to assess.');
+        put('seo_recs', !doc.querySelector('meta[name="robots"][content*="noindex" i]') ? 'pass' : 'fail', doc.querySelector('meta[name="robots"][content*="noindex" i]') ? 'A noindex directive was found in page metadata.' : 'No noindex meta directive was found. Robots.txt and Google indexing status are checked separately.');
+        put('broken_links', 'warning', 'Link destinations were not crawled individually. Check important internal and external links manually.');
+        put('cwv_metrics', 'warning', 'Waiting for Google PageSpeed Insights Lighthouse analysis.');
+        put('content_quality', 'warning', 'Originality, usefulness, accuracy and human editorial quality require human review.');
+        put('ad_placement', 'warning', 'Ad placement and content-to-ad balance require review on the live page and cannot be judged before ads are present.');
+        put('ux_checklist', 'warning', 'Visual contrast, keyboard use and real-device usability need a full accessibility review.');
+      } else {
+        checkItemsDatabase.forEach(item => put(item.id, 'warning', pageError + ' ' + manual));
+        put('https', target.protocol === 'https:' ? 'pass' : 'fail', target.protocol === 'https:' ? 'The submitted address uses HTTPS; the site could not be inspected.' : 'The submitted address uses HTTP.');
+      }
 
-        if (item.id === 'https') {
-          status = url.startsWith('https://') ? 'pass' : 'fail';
-          statusMsg = status === 'pass'
-            ? 'The submitted URL uses HTTPS. This does not verify the certificate or every page.'
-            : 'The submitted URL does not use HTTPS. Use a secure HTTPS address.';
-        }
+      // Root files are tested separately; CORS restrictions may prevent a browser from reading them.
+      const rootChecks = await Promise.all([
+        ['robots','robots.txt'], ['sitemap','sitemap.xml']
+      ].map(async ([id, file]) => {
+        try {
+          const response = await timeoutFetch(new URL(file, target.origin + '/').href, 6000);
+          if (!response.ok) return put(id, 'fail', file + ' returned HTTP ' + response.status + '.');
+          const body = await response.text();
+          const valid = id === 'robots' ? /user-agent\s*:/i.test(body) : /<urlset|<sitemapindex/i.test(body);
+          put(id, valid ? 'pass' : 'warning', valid ? file + ' was fetched and contains expected markers.' : file + ' exists but expected content markers were not found.');
+        } catch (_) { put(id, 'warning', file + ' could not be read by the browser (possibly CORS/network restrictions). Verify it directly.'); }
+      }));
 
-        if (status === 'pass') passCount++;
-        else if (status === 'warning') warningCount++;
-        else failCount++;
+      // Lighthouse gives independently generated mobile performance, SEO and accessibility results.
+      try {
+        const psiUrl = new URL('https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed');
+        psiUrl.searchParams.set('url', url);
+        psiUrl.searchParams.set('strategy', 'mobile');
+        ['PERFORMANCE','SEO','ACCESSIBILITY','BEST_PRACTICES'].forEach(v => psiUrl.searchParams.append('category', v));
+        const response = await timeoutFetch(psiUrl.href, 45000);
+        if (!response.ok) throw new Error('PageSpeed API returned HTTP ' + response.status);
+        const data = await response.json();
+        const cats = data.lighthouseResult?.categories || {};
+        const score = key => typeof cats[key]?.score === 'number' ? Math.round(cats[key].score * 100) : null;
+        const perf = score('performance');
+        const seo = score('seo');
+        const access = score('accessibility');
+        const best = score('best-practices');
+        if (perf !== null) put('cwv_metrics', perf >= 90 ? 'pass' : 'warning', 'Google Lighthouse mobile Performance score: ' + perf + '/100. This is a lab test, not field Core Web Vitals.');
+        if (seo !== null) put('seo_recs', seo >= 90 ? 'pass' : 'warning', 'Google Lighthouse mobile SEO score: ' + seo + '/100.');
+        if (access !== null) put('ux_checklist', access >= 90 ? 'pass' : 'warning', 'Google Lighthouse mobile Accessibility score: ' + access + '/100.');
+        if (best !== null) put('readability', best >= 90 ? 'pass' : 'warning', 'Google Lighthouse Best Practices score: ' + best + '/100. This is not a readability score.');
+      } catch (error) {
+        put('cwv_metrics', 'warning', 'Google PageSpeed analysis was unavailable: ' + (error.message || 'request failed') + '. Try again later.');
+      }
 
-        auditResults.push({
-          ...item,
-          status,
-          passMsg: status === 'pass' ? statusMsg : item.passMsg,
-          failMsg: status !== 'pass' ? statusMsg : item.failMsg
-        });
+      let passCount = 0, warningCount = 0, failCount = 0;
+      auditResults = checkItemsDatabase.map(item => {
+        const r = results.get(item.id) || { status: 'warning', message: manual };
+        if (r.status === 'pass') passCount++;
+        else if (r.status === 'fail') failCount++;
+        else warningCount++;
+        return { ...item, status: r.status, passMsg: r.message, failMsg: r.message };
       });
-
       document.getElementById('overallScoreVal').textContent = '—';
       document.getElementById('countPass').textContent = passCount;
       document.getElementById('countWarning').textContent = warningCount;
       document.getElementById('countFail').textContent = failCount;
-
-      const gaugeFill = document.getElementById('scoreGaugeFill');
-      gaugeFill.style.strokeDashoffset = 283;
-      gaugeFill.style.stroke = 'var(--warning)';
-      document.getElementById('scoreRatingText').textContent = 'Manual review needed — no approval score is calculated';
+      const gauge = document.getElementById('scoreGaugeFill');
+      gauge.style.strokeDashoffset = 283;
+      gauge.style.stroke = 'var(--warning)';
+      document.getElementById('scoreRatingText').textContent = 'Live page checks completed — manual policy review still required';
       document.getElementById('scoreRatingText').style.color = 'var(--warning)';
-
       renderCheckGrid(auditResults);
       document.getElementById('dashboardContainer').style.display = 'block';
-      showToast('Diagnostic checklist ready. Review the items marked for manual verification.', 'warning');
+      showToast('Website-specific checks completed. Some items need manual review.', 'warning');
     }
 
     /* ==========================================================================
